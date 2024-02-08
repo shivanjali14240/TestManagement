@@ -2,6 +2,7 @@ package com.entity;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import jakarta.persistence.Entity;
@@ -44,8 +45,9 @@ public class Question {
 	@JoinColumn(name = "category_id")
 	private Category category;
 
-	@ManyToMany 
-	@JoinTable(name = "question_test",joinColumns = @JoinColumn(name = "question_id"),inverseJoinColumns = @JoinColumn(name = "test_id")) 
+	@ManyToMany
+	@JoinTable(name = "question_test", joinColumns = @JoinColumn(name = "question_id"), inverseJoinColumns = @JoinColumn(name = "test_id"))
+	@JsonIgnore
 	private List<TestManagement> tests;
 
 }

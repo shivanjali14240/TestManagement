@@ -42,7 +42,7 @@ public class TestManagement {
 
 	private boolean active = false;
 
-	@ManyToMany(mappedBy = "tests",cascade = CascadeType.PERSIST)
+	@ManyToMany(mappedBy = "tests",cascade = CascadeType.ALL)
 	@JsonIgnore
 	private List<Question> questions;
 

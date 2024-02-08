@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import com.entity.Category;
@@ -19,7 +20,15 @@ public class CategoryServiceImple implements CategoryService {
 
 	@Override
 	public Category addCategory(Category category) {
-		return this.categoryRepository.save(category);
+		try {
+			Optional<Category> existingCategory = categoryRepository.findByName(category.getName());
+			if (existingCategory.isPresent()) {
+				throw new IllegalArgumentException("Category with name " + category.getName() + " already exists");
+			}
+			return categoryRepository.save(category);
+		} catch (DataIntegrityViolationException e) {
+			throw new IllegalArgumentException("Category with name " + category.getName() + " already exists", e);
+		}
 	}
 
 	@Override

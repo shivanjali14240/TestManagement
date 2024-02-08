@@ -3,6 +3,7 @@ package com.controller;
 import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,9 +29,14 @@ public class CategoryController {
 	private CategoryService categoryService;
 
 	@PostMapping
-	public Category addNewCategory(@RequestBody Category category) {
-		log.info("Adding a new category: {}", category);
-		return categoryService.addCategory(category);
+	public ResponseEntity<?> addNewCategory(@RequestBody Category category) {
+		try {
+			log.info("Adding a new category: {}", category);
+			return ResponseEntity.ok(categoryService.addCategory(category));
+		} catch (IllegalArgumentException e) {
+			log.error("Error occurred while saving duplicate category by name", e);
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+		}
 	}
 
 	@GetMapping

@@ -47,6 +47,9 @@ public class TestServiceImpl implements TestService {
 
 	@Override
 	public void deleteTestById(Long testId) {
+		if(!repository.existsById(testId)) {
+			throw new TestIdNotExistException("Test not found with id: " + testId);
+		}
 		repository.deleteById(testId);
 	}
 
