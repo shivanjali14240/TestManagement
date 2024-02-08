@@ -1,22 +1,26 @@
 package com.service;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+import org.apache.poi.EncryptedDocumentException;
 
 import com.entity.Question;
 
-
-
 public interface QuestionService {
 
-    List<Question> getAllQuestions();
+	List<Question> getAllQuestions();
 
-    Question getQuestionById(Long id);
+	Question getQuestionById(Long id);
+	
+	Question saveQuestion(Question question, String categoryName);
 
-    Question saveQuestion(Question question);
+	void deleteQuestion(Long id);
 
-    void deleteQuestion(Long id);
+	Question updateQuestion(Long id, Question updatedQuestion);
 
-	void importQuestionsFromExcel(InputStream excelInputStream);
+	List<Question> importQuestionsFromExcel(InputStream excelInputStream, Long categoryId)
+			throws EncryptedDocumentException, IOException;
+
 }

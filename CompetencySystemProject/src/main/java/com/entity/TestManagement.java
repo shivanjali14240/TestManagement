@@ -2,8 +2,10 @@ package com.entity;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -40,7 +42,8 @@ public class TestManagement {
 
 	private boolean active = false;
 
-	@ManyToMany(mappedBy = "tests")
+	@ManyToMany(mappedBy = "tests",cascade = CascadeType.PERSIST)
+	@JsonIgnore
 	private List<Question> questions;
 
 }

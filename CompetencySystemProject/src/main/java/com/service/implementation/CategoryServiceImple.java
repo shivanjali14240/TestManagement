@@ -1,6 +1,7 @@
 package com.service.implementation;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,37 +29,30 @@ public class CategoryServiceImple implements CategoryService {
 
 	@Override
 	public Category getCategoryById(Long categoryId) {
-		try {
-			return this.categoryRepository.findById(categoryId)
-					.orElseThrow(() -> new CategoryNotFoundException("Category with id " + categoryId + " not found"));
-		} catch (CategoryNotFoundException categoryNotFoundException) {
-			throw categoryNotFoundException;
-		}
+		Optional<Category> optionalCategory = categoryRepository.findById(categoryId);
+		return optionalCategory
+				.orElseThrow(() -> new CategoryNotFoundException("Category not found with ID: " + categoryId));
 	}
 
 	@Override
-	public Category updateCategory(Category category) {
-		try {
-			return this.categoryRepository.save(category);
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to Update category", e);
+	public Category updateCategory(Long categoryId, Category updatedCategory) {
+		if (exists(categoryId)) {
+			updatedCategory.setCategory_id(categoryId);
+			return categoryRepository.save(updatedCategory);
+		} else {
+			throw new CategoryNotFoundException("Category not found with ID: " + categoryId);
 		}
 	}
 
 	@Override
 	public void deleteCategory(Long categoryId) {
-		try {
-			Category category = new Category();
-			category.setCategory_id(categoryId);
-			this.categoryRepository.delete(category);
-		} catch (CategoryNotFoundException categoryNotFoundException) {
-			throw new CategoryNotFoundException("Category with id " + categoryId + " not found");
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to delete category", e);
+		if (exists(categoryId)) {
+			categoryRepository.deleteById(categoryId);
+		} else {
+			throw new CategoryNotFoundException("Category not found with ID: " + categoryId);
 		}
-
 	}
-	
+
 	public boolean exists(Long categoryId) {
 		return categoryRepository.existsById(categoryId);
 	}

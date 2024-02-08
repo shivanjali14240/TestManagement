@@ -1,7 +1,5 @@
 package com.entity;
 
-
-
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -18,31 +16,28 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-
+import lombok.ToString;
 
 @Entity
-@Table(name="category")
+@Table(name = "category")
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@ToString
 public class Category {
-	
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long category_id;
-	
-	private String title;
-	
+
+	private String name;
+
 	private String description;
-	
-	@OneToMany(mappedBy = "category",cascade = CascadeType.ALL)
+
+	@OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
 	@JsonIgnore
-    private List<Question> questions;
-	
-	
-	
+	private List<Question> questions;
 
 }

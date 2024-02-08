@@ -8,11 +8,11 @@ public interface TestService {
 
 	public TestManagement addTest(TestManagement test);
 
-	public TestManagement updateTest(TestManagement test);
-
 	public List<TestManagement> getTest();
 
 	public TestManagement getTestById(Long testId);
 
 	public void deleteTestById(Long testId);
+
+	TestManagement updateTest(Long id, TestManagement test);
 }

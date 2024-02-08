@@ -12,8 +12,9 @@ public interface CategoryService {
 
 	Category getCategoryById(Long categoryId);
 
-	Category updateCategory(Category category);
-
 	void deleteCategory(Long categoryId);
+
 	public boolean exists(Long categoryId);
+
+	Category updateCategory(Long categoryId, Category updatedCategory);
 }

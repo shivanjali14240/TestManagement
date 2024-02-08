@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,48 +47,68 @@ public class QuestionController {
 			Question question = questionService.getQuestionById(id);
 			return ResponseEntity.ok(question);
 		} catch (QuestionNotFoundException ex) {
-			return ResponseEntity.status(404).body(null); 
+			log.warn("Question with ID {} not found", id);
+			return ResponseEntity.notFound().build();
 		}
 	}
 
 	@PostMapping
-	public Question createQuestion(@RequestBody Question question) {
+	public Question createQuestion(@RequestBody Question question, String title) {
 		log.info("Creating question: {}", question);
-		return questionService.saveQuestion(question);
+		Question saveQuestion = questionService.saveQuestion(question, title);
+		return saveQuestion;
 	}
 
 	@PutMapping("/{id}")
-	public Question updateQuestion(@PathVariable Long id, @RequestBody Question question) {
-		log.info("Updating question with id {}: {}", id, question);
-		question.setQuestionId(id);
-		return questionService.saveQuestion(question);
+	public ResponseEntity<Question> updateQuestion(@PathVariable Long id, @RequestBody Question question) {
+		try {
+			log.info("Updating question with ID {}: {}", id, question);
+			Question updatedQuestion = questionService.updateQuestion(id, question);
+			return ResponseEntity.ok(updatedQuestion);
+		} catch (QuestionNotFoundException ex) {
+			log.warn("Question with ID {} not found", id);
+			return ResponseEntity.notFound().build();
+		} catch (Exception ex) {
+			log.error("Error updating question with ID {}: {}", id, ex.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
 	}
 
 	@DeleteMapping("/{id}")
-	public void deleteQuestion(@PathVariable Long id) {
+	public ResponseEntity<String> deleteQuestion(@PathVariable Long id) {
 		try {
-			log.info("Deleting question with id: {}", id);
 			questionService.deleteQuestion(id);
+			log.info("Question with ID {} deleted successfully", id);
+			return ResponseEntity.ok("Question with ID " + id + " deleted successfully");
 		} catch (QuestionNotFoundException ex) {
-			log.error("Error deleting question with id {}: {}", id, ex.getMessage());
+			log.error("Error deleting question with ID {}: {}", id, ex.getMessage());
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Question not found with ID: " + id);
+		} catch (Exception ex) {
+			log.error("Error deleting question with ID {}: {}", id, ex.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Failed to delete question with ID: " + id);
 		}
 	}
-	
 
-	 @PostMapping("/import")
-	    public ResponseEntity<String> importQuestions(@RequestParam("file") MultipartFile file) {
-	        if (file.isEmpty()) {
-	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please provide an Excel file");
-	        }
-	        try (InputStream excelInputStream = file.getInputStream()) {
-	            questionService.importQuestionsFromExcel(excelInputStream);
-	            return ResponseEntity.ok("Questions imported successfully");
-	        } catch (IOException e) {
-	            log.error("Error importing questions from Excel", e);
-	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error importing questions");
-	        }
-	    }
-	 
-	 
-	 
+	@PostMapping("/import")
+	public ResponseEntity<List<Question>> importQuestions(@RequestParam("file") MultipartFile file,
+			@RequestParam("categoryId") Long categoryId) {
+		try {
+			if (file == null || file.isEmpty()) {
+				return ResponseEntity.badRequest().body(null);
+			}
+
+			log.info("Importing questions from Excel file");
+			InputStream excelInputStream = file.getInputStream();
+			List<Question> importedQuestions = questionService.importQuestionsFromExcel(excelInputStream, categoryId);
+			return ResponseEntity.ok(importedQuestions);
+		} catch (IOException e) {
+			log.error("Error importing questions from Excel file: {}", e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+		} catch (Exception e) {
+			log.error("Error importing questions from Excel file: {}", e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+		}
 	}
+
+}

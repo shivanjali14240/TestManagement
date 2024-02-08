@@ -17,6 +17,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Table(name = "questions")
@@ -25,26 +26,26 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@ToString
 public class Question {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long questionId;
-
 	private String content;
 	private String option1;
 	private String option2;
 	private String option3;
 	private String option4;
 	private String answer;
-	private int marks;
+	private String marks;
 
 	@ManyToOne
 	@JoinColumn(name = "category_id")
 	private Category category;
 
-	@ManyToMany  
-	@JoinTable(name = "question_test",joinColumns = @JoinColumn(name = "question_id"),inverseJoinColumns = @JoinColumn(name = "test_id"))   
+	@ManyToMany 
+	@JoinTable(name = "question_test",joinColumns = @JoinColumn(name = "question_id"),inverseJoinColumns = @JoinColumn(name = "test_id")) 
 	private List<TestManagement> tests;
 
 }
