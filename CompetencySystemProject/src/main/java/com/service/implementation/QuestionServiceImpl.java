@@ -1,13 +1,25 @@
 package com.service.implementation;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.poi.EncryptedDocumentException;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.entity.Category;
 import com.entity.Question;
+import com.exception.CategoryNotFoundException;
 import com.exception.QuestionNotFoundException;
 import com.repository.CategoryRepository;
 import com.repository.QuestionRepository;
@@ -76,38 +88,58 @@ public class QuestionServiceImpl implements QuestionService {
 		}
 	}
 
-	/*
-	 * public List<Question> importQuestionsFromExcel(InputStream excelInputStream,
-	 * Long categoryId) throws EncryptedDocumentException, IOException {
-	 * 
-	 * Workbook workbook = WorkbookFactory.create(excelInputStream); Sheet sheet =
-	 * workbook.getSheetAt(0); List<Question> importedQuestions = new ArrayList<>();
-	 * 
-	 * for (Row row : sheet) { if (row.getRowNum() == 0) { continue; }
-	 * 
-	 * Question question = createQuestionFromRow(row, categoryId); if (question !=
-	 * null) { importedQuestions.add(questionRepository.save(question)); } }
-	 * 
-	 * return importedQuestions; }
-	 * 
-	 * private Question createQuestionFromRow(Row row, Long categoryId) { Question
-	 * question = new Question();
-	 * question.setContent(getStringValueFromCell(row.getCell(0)));
-	 * question.setOption1(getStringValueFromCell(row.getCell(1)));
-	 * question.setOption2(getStringValueFromCell(row.getCell(2)));
-	 * question.setOption3(getStringValueFromCell(row.getCell(3)));
-	 * question.setOption4(getStringValueFromCell(row.getCell(4)));
-	 * question.setAnswer(getStringValueFromCell(row.getCell(5)));
-	 * question.setMarks(getStringValueFromCell(row.getCell(6))); Category category
-	 * = categoryRepository.findById(categoryId).orElse(null);
-	 * question.setCategory(category);
-	 * 
-	 * return question; }
-	 * 
-	 * private String getStringValueFromCell(Cell cell) { if (cell == null) { return
-	 * null; } switch (cell.getCellType()) { case STRING: return
-	 * cell.getStringCellValue(); case NUMERIC: return
-	 * String.valueOf(cell.getNumericCellValue()); default: return null; } }
-	 */
+	@Override
+	public List<Question> saveQuestionsFromExcel(MultipartFile file) throws IOException {
+		List<Question> savedQuestions = new ArrayList<>();
+
+		try (InputStream inputStream = file.getInputStream()) {
+			Workbook workbook = WorkbookFactory.create(inputStream);
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+			rowIterator.next();
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+				Question question = createQuestionFromRow(row);
+				savedQuestions.add(questionRepository.save(question));
+			}
+		} catch (CategoryNotFoundException e) {
+			throw new IllegalArgumentException("Category id not found" + e.getMessage());
+
+		} catch (IOException | EncryptedDocumentException ex) {
+			throw new IOException("Failed to read Excel file: " + ex.getMessage());
+		}
+		return savedQuestions;
+	}
+
+	private Question createQuestionFromRow(Row row) {
+		Question question = new Question();
+		question.setContent(getStringValueFromCell(row.getCell(0)));
+		question.setOption1(getStringValueFromCell(row.getCell(1)));
+		question.setOption2(getStringValueFromCell(row.getCell(2)));
+		question.setOption3(getStringValueFromCell(row.getCell(3)));
+		question.setOption4(getStringValueFromCell(row.getCell(4)));
+		question.setAnswer(getStringValueFromCell(row.getCell(5)));
+		question.setMarks(getStringValueFromCell(row.getCell(6)));
+		String categoryName = getStringValueFromCell(row.getCell(7));
+		Category category = categoryRepository.findByName(categoryName)
+				.orElseThrow(() -> new IllegalArgumentException("Category not found with name: " + categoryName));
+		question.setCategory(category);
+
+		return question;
+	}
+
+	private String getStringValueFromCell(Cell cell) {
+		if (cell == null) {
+			return null;
+		}
+		switch (cell.getCellType()) {
+		case STRING:
+			return cell.getStringCellValue();
+		case NUMERIC:
+			return String.valueOf(cell.getNumericCellValue());
+		default:
+			return null;
+		}
+	}
 
 }

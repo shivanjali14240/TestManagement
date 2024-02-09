@@ -3,8 +3,10 @@ package com.testController;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,9 +17,11 @@ import org.mockito.Mock;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.controller.QuestionController;
 import com.entity.Question;
+import com.exception.CategoryNotFoundException;
 import com.exception.QuestionNotFoundException;
 import com.service.QuestionService;
 
@@ -121,29 +125,53 @@ class QuestionControllerTest {
 		assertEquals("Question not found with ID: " + questionId, response.getBody());
 	}
 
-	/*
-	 * @Test void testImportQuestions_Positive() throws IOException { MultipartFile
-	 * file = new MockMultipartFile("file", "filename.xlsx",
-	 * "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-	 * "content".getBytes()); Long categoryId = 1L; List<Question> importedQuestions
-	 * = new ArrayList<>();
-	 * when(questionService.importQuestionsFromExcel(any(InputStream.class),
-	 * any(Long.class))) .thenReturn(importedQuestions);
-	 * ResponseEntity<List<Question>> response =
-	 * questionController.importQuestions(file, categoryId);
-	 * assertEquals(HttpStatus.OK, response.getStatusCode());
-	 * assertEquals(importedQuestions, response.getBody()); }
-	 * 
-	 * @Test void testImportQuestions_Negative() throws IOException { MultipartFile
-	 * file = new MockMultipartFile("file", "uploadFile.xlsx",
-	 * "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-	 * "content".getBytes()); Long categoryId = 1L;
-	 * when(questionService.importQuestionsFromExcel(any(InputStream.class),
-	 * any(Long.class))) .thenThrow(IOException.class);
-	 * ResponseEntity<List<Question>> response =
-	 * questionController.importQuestions(file, categoryId);
-	 * assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode()); }
-	 */
+	@Test
+	public void testUploadQuestionsWithValidFile() throws IOException, CategoryNotFoundException {
+		MultipartFile file = mock(MultipartFile.class);
+		List<Question> questions = new ArrayList<>();
+		questions.add(new Question());
+
+		when(questionService.saveQuestionsFromExcel(file)).thenReturn(questions);
+
+		ResponseEntity<?> response = questionController.uploadQuestions(file);
+
+		assert response.getStatusCode().equals(HttpStatus.OK);
+		assert response.getBody().equals(questions);
+	}
+
+	@Test
+	public void testUploadQuestionsWithEmptyFile() {
+		MultipartFile file = mock(MultipartFile.class);
+		when(file.isEmpty()).thenReturn(true);
+
+		ResponseEntity<?> response = questionController.uploadQuestions(file);
+
+		assert response.getStatusCode().equals(HttpStatus.BAD_REQUEST);
+		assert response.getBody().equals("File is empty");
+	}
+
+	@Test
+	public void testUploadQuestionsWithCategoryNotFoundException() throws IOException, CategoryNotFoundException {
+		MultipartFile file = mock(MultipartFile.class);
+		when(questionService.saveQuestionsFromExcel(file))
+				.thenThrow(new CategoryNotFoundException("Category not found"));
+
+		ResponseEntity<?> response = questionController.uploadQuestions(file);
+
+		assert response.getStatusCode().equals(HttpStatus.BAD_REQUEST);
+		assert response.getBody().equals("Category not found: Category not found");
+	}
+
+	@Test
+	public void testUploadQuestionsWithIOException() throws IOException, CategoryNotFoundException {
+		MultipartFile file = mock(MultipartFile.class);
+		when(questionService.saveQuestionsFromExcel(file)).thenThrow(new IOException());
+
+		ResponseEntity<?> response = questionController.uploadQuestions(file);
+
+		assert response.getStatusCode().equals(HttpStatus.INTERNAL_SERVER_ERROR);
+		assert response.getBody().equals("Failed to upload questions. Please try again later.");
+	}
 
 	private Question createQuestion(Long id, String content, String option1, String option2, String option3,
 			String option4, String answer, String marks) {

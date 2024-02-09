@@ -1,5 +1,6 @@
 package com.controller;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +15,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.entity.Question;
+import com.exception.CategoryNotFoundException;
 import com.exception.QuestionNotFoundException;
 import com.service.QuestionService;
 
@@ -89,22 +92,24 @@ public class QuestionController {
 		}
 	}
 
-	/*
-	 * @PostMapping("/import") public ResponseEntity<List<Question>>
-	 * importQuestions(@RequestParam("file") MultipartFile file,
-	 * 
-	 * @RequestParam("categoryId") Long categoryId) { try { if (file == null ||
-	 * file.isEmpty()) { return ResponseEntity.badRequest().body(null); }
-	 * 
-	 * log.info("Importing questions from Excel file"); InputStream excelInputStream
-	 * = file.getInputStream(); List<Question> importedQuestions =
-	 * questionService.importQuestionsFromExcel(excelInputStream, categoryId);
-	 * return ResponseEntity.ok(importedQuestions); } catch (IOException e) {
-	 * log.error("Error importing questions from Excel file: {}", e.getMessage());
-	 * return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null); }
-	 * catch (Exception e) {
-	 * log.error("Error importing questions from Excel file: {}", e.getMessage());
-	 * return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null); }
-	 * }
-	 */
+	@PostMapping("/upload")
+	public ResponseEntity<?> uploadQuestions(@RequestParam("file") MultipartFile file) {
+		if (file.isEmpty()) {
+			return ResponseEntity.badRequest().body("File is empty");
+		}
+
+		try {
+			List<Question> savedQuestions = questionService.saveQuestionsFromExcel(file);
+			log.info("Successfully saved {} questions from Excel file", savedQuestions.size());
+			return ResponseEntity.ok(savedQuestions);
+		} catch (CategoryNotFoundException ex) {
+			String errorMessage = "Category not found: " + ex.getMessage();
+			log.error(errorMessage);
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
+		} catch (IOException ex) {
+			String errorMessage = "Failed to upload questions. Please try again later.";
+			log.error(errorMessage, ex);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
+		}
+	}
 }
