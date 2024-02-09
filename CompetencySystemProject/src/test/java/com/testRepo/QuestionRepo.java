@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import com.entity.Category;
 import com.entity.Question;
 import com.repository.CategoryRepository;
 import com.repository.QuestionRepository;
@@ -41,14 +42,17 @@ public class QuestionRepo {
 
 	@Test
 	void testSaveQuestion() {
-		Question question = new Question(null, "Question 1", "Option 1", "Option 2", "Option 3", "Option 4", "Option 1",
-				"1", null, null);
-		Question savedQuestion = new Question(1L, "Question 1", "Option 1", "Option 2", "Option 3", "Option 4",
-				"Option 1", "1", null, null);
-		when(questionRepository.save(question)).thenReturn(savedQuestion);
-		Question result = questionService.saveQuestion(question, null);
-		assertEquals(savedQuestion.getQuestionId(), result.getQuestionId());
-		assertEquals(savedQuestion.getContent(), result.getContent());
+	    Category category = new Category();
+	    category.setName("Category Name");
+	    when(categoryRepository.findByName("Category Name")).thenReturn(Optional.of(category));
+	    Question question = new Question(null, "Question 1", "Option 1", "Option 2", "Option 3", "Option 4", "Option 1",
+	            "1", category, null);
+	    Question savedQuestion = new Question(1L, "Question 1", "Option 1", "Option 2", "Option 3", "Option 4",
+	            "Option 1", "1", category, null);
+	    when(questionRepository.save(question)).thenReturn(savedQuestion);
+	    Question result = questionService.saveQuestion(question, "Category Name");
+	    assertEquals(savedQuestion.getQuestionId(), result.getQuestionId());
+	    assertEquals(savedQuestion.getContent(), result.getContent());
 	}
 
 	@Test

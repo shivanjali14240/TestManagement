@@ -73,11 +73,12 @@ public class TestController {
 	public ResponseEntity<?> updateTest(@PathVariable("id") Long id, @RequestBody TestManagement test) {
 		try {
 			TestManagement updatedTest = service.updateTest(id, test);
+			if (updatedTest == null) {
+				log.warn("Test with ID {} not found", id);
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Test with ID " + id + " not found");
+			}
 			log.info("updateTest: Test with ID {} updated successfully", id);
 			return ResponseEntity.ok(updatedTest);
-		} catch (TestIdNotExistException e) {
-			log.warn("Test with ID {} not found", id);
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Test with ID " + id + " not found");
 		} catch (Exception e) {
 			log.error("Error updating test with ID {}: {}", id, e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
